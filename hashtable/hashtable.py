@@ -12,6 +12,77 @@ class HashTableEntry:
 MIN_CAPACITY = 8
 
 
+class LinkedList:
+	def __init__(self):
+		self.head = None
+
+	def insert_at_head(self, node):
+		node.next = self.head
+		self.head = node
+
+	def find(self, value):
+		cur = self.head
+
+		while cur is not None:
+			if cur.value == value:
+				return cur
+
+			cur = cur.next
+
+		# If we get here, it's not in the list
+		return None
+		
+	def delete(self, value):
+
+		# Special case of empty list
+
+		if self.head is None:
+			return None
+
+		# Special case of deleting the head of the list
+
+		if self.head.value == value:
+			old_head = self.head
+			self.head = self.head.next
+			old_head.next = None
+			return old_head
+
+		# General case
+
+		prev = self.head
+		cur = self.head.next
+
+		while cur is not None:
+			if cur.value == value:
+				prev.next = cur.next
+				cur.next = None
+				return cur
+
+			prev = prev.next
+			cur = cur.next
+
+		# If we get here, we didn't find it
+		return None
+			
+
+
+	def __str__(self):
+		r = ""
+
+		# Traverse the list
+		cur = self.head
+
+		while cur is not None:
+			r += f'{cur.value}'
+
+			if cur.next is not None:
+				r += ' -> '
+
+			cur = cur.next
+		
+		return r
+
+
 class HashTable:
     """
     A hash table that with `capacity` buckets
@@ -22,10 +93,11 @@ class HashTable:
 
     def __init__(self, capacity):
         self.capacity = capacity
-        self.table = [None] * self.capacity
+        self.table = [LinkedList()] * self.capacity
+        self.items = 0
 
-    def __repr__(self):
-        return f"HashEntry({repr(self.key)},{repr(self.value)})"    
+    def __repr__(self): 
+        return f"HashEntry({repr(self.key)},{repr(self.value)})"   
 
 
     def get_num_slots(self):
@@ -38,6 +110,7 @@ class HashTable:
 
         Implement this.
         """
+        return len(self.table)
         
 
 
@@ -47,8 +120,7 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
-
+        return self.items/self.get_num_slots()
 
     def fnv1(self, key):
         """
@@ -88,8 +160,22 @@ class HashTable:
 
         Implement this.
         """
-        index = self.hash_index(key)
-        self.table[index] = HashTableEntry(key, value)
+        if self.get_load_factor() > 0.7:
+            self.capacity = self.capacity * 2
+            self.resize(self.capacity)
+        if self.get(key):
+            index = self.hash_index(key)
+            current = self.table[index].head
+            n = 1
+            while n == 1:
+                if current.key == key:
+                    current.value = value
+                    n = 0
+                current = current.next
+        else:
+            index = self.hash_index(key)
+            self.table[index].insert_at_head(HashTableEntry(key, value))
+            self.items += 1
 
 
     def delete(self, key):
@@ -101,7 +187,17 @@ class HashTable:
         Implement this.
         """
         index = self.hash_index(key)
-        self.table[index] = HashTableEntry(key, None)
+        current = self.table[index].head
+        if current:
+            last_node = None
+            while current:
+                if current.key == key:
+                    if last_node:
+                        last_node.next = current.next
+                    else:
+                        self.table[index] = current.next
+                last_node = current
+                current = current.next
 
 
     def get(self, key):
@@ -113,9 +209,17 @@ class HashTable:
         Implement this.
         """
         index = self.hash_index(key)
-        hash_entry = self.table[index]
+        try:
+            current = self.table[index].head
+        except AttributeError:
+            return None
+        if current:
+            while current:
+                if current.key == key:
+                    return current.value
+                current = current.next
+        return None
 
-        return hash_entry.value
 
 
     def resize(self, new_capacity):
@@ -125,7 +229,19 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        lst = [LinkedList()] * new_capacity
+        for i in range(len(self.table)):
+            if self.table[i].head.key is not None:
+                current = self.table[i].head
+                n = 1
+                while n == 1:
+                    index = self.hash_index(current.key)
+                    lst[index].insert_at_head(HashTableEntry(current.key, current.value))
+                    if current.next == None:
+                        n = 0
+                    current = current.next
+        self.table = lst
+
 
 
 
@@ -158,6 +274,9 @@ if __name__ == "__main__":
 
     print(f"\nResized from {old_capacity} to {new_capacity}.\n")
 
+
+    for i in range(1, 13):
+        ht.delete(f"line_{i}")
     # Test if data intact after resizing
     for i in range(1, 13):
         print(ht.get(f"line_{i}"))

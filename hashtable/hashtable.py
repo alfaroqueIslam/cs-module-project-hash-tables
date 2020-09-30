@@ -198,6 +198,8 @@ class HashTable:
                         self.table[index] = current.next
                 last_node = current
                 current = current.next
+        while self.get(key):
+            self.delete(key)
 
 
     def get(self, key):

@@ -276,7 +276,8 @@ if __name__ == "__main__":
 
     print(f"\nResized from {old_capacity} to {new_capacity}.\n")
 
-
+    # for i in range(1, 13):
+    #     ht.delete(f"line_{i}")
     # Test if data intact after resizing
     for i in range(1, 13):
         print(ht.get(f"line_{i}"))
